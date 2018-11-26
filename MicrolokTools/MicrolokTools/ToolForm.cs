@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Microsoft.Office.Interop.Word;
+using Application = System.Windows.Forms.Application;
 
 namespace MicrolokTools
 {
@@ -22,8 +23,13 @@ namespace MicrolokTools
         public string oCompleted;
         public string oNote;
         public Match oMatch;
+        public Label[] oLabels;
+        public int oLabelCount;
         public int oStart;
         public int oEnd;
+        public int oVertical;
+        public int oHorizontal;
+        public System.Drawing.Point StartPoint;
         public string oSourceFile;
         public string oSourceFolder;
         public string oNewFile;
@@ -306,6 +312,29 @@ namespace MicrolokTools
             }
             NVBlank();
 
+            using (Form form = new SlotOffSelect())
+            {
+                form.TopLevel = true;
+                form.TopMost = true;
+                oVertical = 13;
+                oHorizontal = 13;
+                oLabelCount = (from string word in oInput where word.Contains("GZ") select word).Count();
+                oLabels = new Label[oLabelCount];
+                oLabelCount = 0;
+                foreach (string oLine in oInput.Where(x => x.Contains("GZ")))
+                {
+                    oLabels[oLabelCount] = new Label();
+                    form.Controls.Add(oLabels[oLabelCount]);
+                    oLabels[oLabelCount].AutoSize = true;
+                    oLabels[oLabelCount].Text = oLine;
+                    oLabels[oLabelCount].Location = new System.Drawing.Point(oHorizontal,oVertical);
+                    
+                    oHorizontal = oHorizontal + oLabels[oLabelCount].Width + 13;
+                    oLabelCount++;
+                }
+                form.ShowDialog();
+            }
+                
 
 
 

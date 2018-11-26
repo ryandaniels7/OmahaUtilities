@@ -54,6 +54,12 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SlotOffSelect.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SlotOffSelect.Designer.cs">
+      <DependentUpon>SlotOffSelect.cs</DependentUpon>
+    </Compile>
     <Compile Include="ToolForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -62,6 +68,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="SlotOffSelect.resx">
+      <DependentUpon>SlotOffSelect.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="ToolForm.resx">
       <DependentUpon>ToolForm.cs</DependentUpon>
     </EmbeddedResource>
