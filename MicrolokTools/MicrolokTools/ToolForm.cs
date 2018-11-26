@@ -35,6 +35,7 @@ namespace MicrolokTools
             oProgram = File.ReadAllLines(oSourceFile).ToList();
             oRegex = new Regex(@"-\d+-");
             oProgram.RemoveAll(x => x.Contains("\f") || x.Contains("Ansaldo STS") || x.Contains("Application:") || x.Contains("CRC =") || x.Trim() == "" || oRegex.Match(x).Success);
+            //Filter compiler output
             oProgram = oGetRange(oProgram, "MICROLOK_II PROGRAM", "END PROGRAM",true);
             oRegex = new Regex(@"^( ){0,4}(\d){0,4}( ){4}");
             while (oProgram.FindIndex(x => x.Contains("//") && !oRegex.Match(x).Success) > -1)
