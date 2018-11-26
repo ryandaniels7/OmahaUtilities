@@ -15,6 +15,7 @@ namespace MicrolokTools
         public Document oDoc;
         public Microsoft.Office.Interop.Word.Application oWord;
         public string oFileType;
+        public string oProgramID;
         public string[] stringSeparators;
         public Range oRange;
         public Regex oRegex;
@@ -25,11 +26,330 @@ namespace MicrolokTools
         public int oEnd;
         public string oSourceFile;
         public string oSourceFolder;
+        public string oNewFile;
         public string DocText;
+        public string oCurrent;
         public List<string> oFilter;
         public List<string> oProgram;
-        public string oTempFile = "TempText.txt";
+        public List<string> oNVProgram = new List<string>();
+        public List<string> oSection;
+        public List<string> oInput;
+        public List<string> oOutput;
 
+        public void NonVitalBuilder()
+        {
+            oStart = oProgram.FindIndex(x => x.ToUpper().Contains("GENISYS.SLAVE"));
+            oStart = oProgram.FindIndex(oStart, x => x.ToUpper().Contains("NV.OUTPUT:"));
+            oEnd = oProgram.FindIndex(oStart, x => x.ToUpper().Contains(";"));
+            oOutput = oProgram.GetRange(oStart + 1, oEnd - oStart);
+            oStart = oProgram.FindIndex(oStart, x => x.ToUpper().Contains("NV.INPUT:"));
+            oEnd = oProgram.FindIndex(oStart, x => x.ToUpper().Contains(";"));
+            oInput = oProgram.GetRange(oStart + 1, oEnd - oStart);
+            oOutput = oOutput.Select(x => x.Trim()).ToList();
+            oOutput.RemoveAll(x => x == "");
+            oOutput = oOutput.Select(x => Regex.Replace(x, @"^H", "")).ToList();
+            oInput = oInput.Select(x => x.Trim()).ToList();
+            oInput.RemoveAll(x => x == "");
+            oInput = oInput.Select(x => Regex.Replace(x, @"^H", "")).ToList();
+            NVWrite(oProgram[0].Replace("ML", "NVML").Replace("MLK8", "MLK").Replace("ML8", "ML").Replace("MICROLOK", "GENISYS"),false);
+            NVBlank();
+            NVWrite("INTERFACE",false);
+            NVBlank();
+            NVWrite("COMM",false);
+            NVBlank();
+            NVWrite("LINK: GENISYS_LINE", false);
+            NVWrite("ADJUSTABLE ENABLE: 0", false);
+            NVWrite("PROTOCOL: GENISYS.SLAVE", false);
+            NVWrite("ADJUSTABLE PORT: 3;", false);
+            NVWrite("ADJUSTABLE STANDBY.PORT: 4;", false);
+            NVWrite("ADJUSTABLE BAUD: 1200;", false);
+            NVWrite("ADJUSTABLE STOPBITS: 1;", false);
+            NVWrite("ADJUSTABLE PARITY: NONE;", false);
+            NVWrite("ADJUSTABLE KEY.ON.DELAY: 50;", false);
+            NVWrite("ADJUSTABLE KEY.OFF.DELAY: 50;", false);
+            NVWrite("ADJUSTABLE CARRIER.MODE: CONSTANT;", false);
+            NVWrite("ADJUSTABLE STALE.DATA.TIMEOUT: 60:SEC;", false);
+            NVWrite("ADJUSTABLE POINT.POINT: 1;", false);
+            NVBlank();
+            NVWrite("ADDRESS: 0", false);
+            NVWrite("ADJUSTABLE ENABLE: 1", false);
+            NVBlank();
+            NVWrite("NV.OUTPUT:", false);
+            foreach (var oLine in oOutput)
+            {
+                if (oLine.Contains("SPARE"))
+                {
+                    NVWrite(oLine);
+                }
+                else
+                {
+                    NVWrite("HG" + oLine);
+                }
+            }
+            NVBlank();
+            NVWrite("NV.INPUT:", false);
+            foreach (var oLine in oInput)
+            {
+                if (oLine.Contains("SPARE"))
+                {
+                    NVWrite(oLine);
+                }
+                else
+                {
+                    NVWrite("HG" + oLine);
+                }
+            }
+            NVBlank();
+            NVWrite("LINK: SCS128_LINE", false);
+            NVWrite("ADJUSTABLE ENABLE: 0", false);
+            NVWrite("PROTOCOL: SCS.SLAVE", false);
+            NVWrite("ADJUSTABLE PORT: 3;", false);
+            NVWrite("ADJUSTABLE BAUD: 1200;", false);
+            NVWrite("ADJUSTABLE STANDBY.PORT: 4;", false);
+            NVWrite("ADJUSTABLE ALTERNATE.BAUD: 1200;", false);
+            NVWrite("ADJUSTABLE STOPBITS: 1;", false);
+            NVWrite("ADJUSTABLE PARITY: EVEN;", false);
+            NVWrite("ADJUSTABLE KEY.ON.DELAY: 50;", false);
+            NVWrite("ADJUSTABLE KEY.OFF.DELAY: 50;", false);
+            NVWrite("ADJUSTABLE STALE.DATA.TIMEOUT: 60:SEC;", false);
+            NVWrite("ADJUSTABLE INTERBYTE.TIMEOUT: 0:MSEC;", false);
+            NVWrite("ADJUSTABLE INDICATION.ACK: ENABLED;", false);
+            NVWrite("ADJUSTABLE POINT.POINT: 1;", false);
+            NVBlank();
+            NVWrite("ADDRESS: 0", false);
+            NVWrite("ADJUSTABLE ENABLE: 1", false);
+            NVBlank();
+            NVWrite("NV.OUTPUT:", false);
+            foreach (var oLine in oOutput)
+            {
+                if (oLine.Contains("SPARE"))
+                {
+                    NVWrite(oLine);
+                }
+                else
+                {
+                    NVWrite("HS" + oLine);
+                }
+            }
+            NVBlank();
+            NVWrite("NV.INPUT:", false);
+            foreach (var oLine in oInput)
+            {
+                if (oLine.Contains("SPARE"))
+                {
+                    NVWrite(oLine);
+                }
+                else
+                {
+                    NVWrite("HS" + oLine);
+                }
+            }
+            NVBlank();
+            NVWrite("LINK: ATCS_LINE", false);
+            NVWrite("ADJUSTABLE ENABLE: 0", false);
+            NVWrite("PROTOCOL: ATCS.SLAVE", false);
+            NVWrite("ADJUSTABLE PORT: 3;", false);
+            NVWrite("ADJUSTABLE BAUD: 9600;", false);
+            NVWrite("ADJUSTABLE POLLING.TIMEOUT: 500:MSEC;", false);
+            NVWrite("ADJUSTABLE POLLING.INTERVAL: 1000:MSEC;", false);
+            NVWrite("ADJUSTABLE HDLC.FAIL.TIMEOUT: 60:SEC;", false);
+            NVWrite("ADJUSTABLE STALE.DATA.TIMEOUT: 120:SEC;", false);
+            NVWrite("ADJUSTABLE XMIT.ACK.TIMEOUT:   120:SEC;", false);
+            NVWrite("ADJUSTABLE INDICATION.BROADCAST.INTERVAL: 60:SEC;", false);
+            NVWrite("ADJUSTABLE MCP.ATCS.ADDRESS: \"78A2AAAAAAA1A1\";", false);
+            NVWrite("ADJUSTABLE DEFAULT.ATCS.HOST.ADDRESS: \"28A2AAAAAA\";", false);
+            NVWrite("ADJUSTABLE HEALTH.ATCS.ADDRESS: \"AAAAAAAAAA\";", false);
+            NVWrite("ADJUSTABLE ADDRESS: \"78A2AAAAAAA2A2\"", false);
+            NVBlank();
+            NVWrite("ADJUSTABLE ENABLE: 1", false);
+            NVWrite("STATION.NAME: XOVR;", false);
+            NVBlank();
+            NVWrite("NV.OUTPUT:", false);
+            foreach (var oLine in oOutput)
+            {
+                if (oLine.Contains("SPARE"))
+                {
+                    NVWrite(oLine);
+                }
+                else
+                {
+                    NVWrite("HAT" + oLine);
+                }
+            }
+            NVBlank();
+            NVWrite("NV.INPUT:", false);
+            foreach (var oLine in oInput)
+            {
+                if (oLine.Contains("SPARE"))
+                {
+                    NVWrite(oLine);
+                }
+                else
+                {
+                    NVWrite("HAT" + oLine);
+                }
+            }
+            NVBlank();
+            NVWrite("LINK: UCE_LINE", false);
+            NVWrite("ADJUSTABLE ENABLE: 0", false);
+            NVWrite("PROTOCOL: UCE.SLAVE", false);
+            NVWrite("ADJUSTABLE POINT.POINT: 1;", false);
+            NVWrite("ADJUSTABLE PORT: 3;", false);
+            NVWrite("ADJUSTABLE BAUD: 2400;", false);
+            NVWrite("ADJUSTABLE STOPBITS: 1;", false);
+            NVWrite("ADJUSTABLE PARITY: NONE;", false);
+            NVWrite("ADJUSTABLE ACK.TIMEOUT: 1:SEC;", false);
+            NVWrite("ADJUSTABLE XMIT.RETRY.LIMIT: 3;", false);
+            NVWrite("ADJUSTABLE STALE.DATA.TIMEOUT: 60:SEC;", false);
+            NVWrite("ADJUSTABLE BROADCAST.INTERVAL: 60:SEC;", false);
+            NVWrite("ADJUSTABLE BUSY.TIMEOUT: 60:SEC;", false);
+            NVBlank();
+            NVWrite("ADDRESS: 0", false);
+            NVWrite("ADJUSTABLE ENABLE: 1", false);
+            NVBlank();
+            NVWrite("NV.OUTPUT:", false);
+            foreach (var oLine in oOutput)
+            {
+                if (oLine.Contains("SPARE"))
+                {
+                    NVWrite(oLine);
+                }
+                else
+                {
+                    NVWrite("HU" + oLine);
+                }
+            }
+            NVBlank();
+            NVWrite("NV.INPUT:", false);
+            foreach (var oLine in oInput)
+            {
+                if (oLine.Contains("SPARE"))
+                {
+                    NVWrite(oLine);
+                }
+                else
+                {
+                    NVWrite("HU" + oLine);
+                }
+            }
+            NVBlank();
+            NVWrite("LINK: ML2", false);
+            NVWrite("ADJUSTABLE ENABLE: 1", false);
+            NVWrite("PROTOCOL: GENISYS.MASTER", false);
+            NVWrite("ADJUSTABLE PORT: 1;", false);
+            NVWrite("ADJUSTABLE BAUD: 1200;", false);
+            NVWrite("ADJUSTABLE STOPBITS: 1;", false);
+            NVWrite("ADJUSTABLE PARITY: NONE;", false);
+            NVWrite("ADJUSTABLE KEY.ON.DELAY: 12;", false);
+            NVWrite("ADJUSTABLE KEY.OFF.DELAY: 12;", false);
+            NVWrite("FIXED SECURE.MODE: ON;", false);
+            NVWrite("FIXED MASTER.CHECKBACK: ON;", false);
+            NVWrite("ADJUSTABLE POINT.POINT: 1;", false);
+            NVBlank();
+            NVWrite("ADDRESS: 1", false);
+            NVWrite("ADJUSTABLE ENABLE: 1", false);
+            NVBlank();
+            NVWrite("NV.INPUT:", false);
+            foreach (var oLine in oOutput)
+            {
+                if (oLine.Contains("SPARE"))
+                {
+                    NVWrite(oLine);
+                }
+                else
+                {
+                    NVWrite("L" + oLine);
+                }
+            }
+            NVBlank();
+            NVWrite("NV.OUTPUT:", false);
+            foreach (var oLine in oInput)
+            {
+                if (oLine.Contains("SPARE"))
+                {
+                    NVWrite(oLine);
+                }
+                else
+                {
+                    NVWrite("L" + oLine);
+                }
+            }
+            NVBlank();
+            NVWrite("NV.BOOLEAN BITS", false);
+            NVBlank();
+            NVWrite("DLVY;");
+            NVBlank();
+            NVWrite("TIMER BITS", false);
+            NVBlank();
+            NVWrite("FIXED DLVY: SET = 0:SEC CLEAR = 1:SEC;");
+            NVBlank();
+            NVWrite("CONFIGURATION", false);
+            NVBlank();
+            NVWrite("SYSTEM", false);
+            NVBlank();
+            NVWrite("ADJUSTABLE DEBUG_PORT_ADDRESS:      1;", false);
+            NVWrite("ADJUSTABLE DEBUG_PORT_BAUDRATE:     9600;", false);
+            NVWrite("LOGIC_TIMEOUT: 500:MSEC;", false);
+            NVBlank();
+            NVWrite("LOGIC BEGIN", false);
+            NVBlank();
+            NVWrite("NV.ASSIGN DLVY TO LDLVY;");
+            NVBlank();
+            foreach (string oLine in oInput.Where(x => x.Contains("NWZ")|| x.Contains("RWZ")))
+            {
+                NVWrite(String.Format("NV.ASSIGN HG{0} + HS{0} + HAT{0} + HU{0} TO L{0};", oLine.Replace(";", "").Replace(",", "")));
+            }
+            NVBlank();
+            foreach (string oLine in oInput.Where(x => x.Contains("BLZ")))
+            {
+                NVWrite(String.Format("NV.ASSIGN HG{0} + HS{0} + HAT{0} + HU{0} TO L{0};", oLine.Replace(";", "").Replace(",", "")));
+            }
+            NVBlank();
+
+
+
+
+
+
+
+
+
+
+
+
+
+            oNewFile = oNVProgram[0].Replace("GENISYS_II PROGRAM ", "").Replace(";", "");
+            oCompleted = string.Join(Environment.NewLine, oNVProgram.ToArray());
+        }
+        public void NVBlank()
+        {
+            oNVProgram.Add("");
+        }
+        public void NVWrite(string sString,bool oIndent = true)
+        {
+            if (oIndent == true)
+            {
+                oNVProgram.Add("  " + sString);
+            }
+            else
+            {
+                oNVProgram.Add(sString);
+            }
+        }
+        public void WriteNonVital()
+        {
+            oWord = new Microsoft.Office.Interop.Word.Application();
+            oDoc = oWord.Documents.Add();
+            oDoc.Content.Text = oCompleted;
+            oDoc.Content.set_Style("No Spacing");
+            oDoc.Content.Font.Size = 10;
+            oDoc.Content.Font.Name = "courier new";
+            oDoc.SaveAs2(oSourceFolder + @"\" + oNewFile + ".docx");
+            oWord.Visible = true;
+            //oWord.Run("Exterior.ExteriorRun");
+            oDoc = null;
+            oWord = null;
+        }
         public void MllStripper()
         {
             oProgram = File.ReadAllLines(oSourceFile).ToList();
@@ -186,7 +506,7 @@ namespace MicrolokTools
             }
             return sString;
         }
-        public void WriteNewDoc()
+        public void WriteFromMll()
         {
             oWord = new Microsoft.Office.Interop.Word.Application();
             oDoc = oWord.Documents.Add();
@@ -220,7 +540,7 @@ namespace MicrolokTools
         }
         public void DocToPlain()
         {
-            TextExtractor extractor = new TextExtractor(oSourceFile);
+            TextExtractor extractor = new TextExtractor(oSourceFile.ToLower());
             DocText = extractor.ExtractText();
             switch (Path.GetExtension(oSourceFile).ToUpper())
             {
@@ -271,7 +591,12 @@ namespace MicrolokTools
         {
             Hide();
             oFileType = ".doc";
-            ProgramSelect();
+            if (ProgramSelect() == true)
+            {
+                DocToPlain();
+                NonVitalBuilder();
+                WriteNonVital();
+            }
             oShow();
         }
         public void MLLConvertButton_Click(object sender, EventArgs e)
@@ -282,7 +607,7 @@ namespace MicrolokTools
             {
                 File.Copy(oSourceFile, oSourceFolder + @"\" + Path.GetFileNameWithoutExtension(oSourceFile) + "-Backup.mll",true);
                 MllStripper();
-                WriteNewDoc();
+                WriteFromMll();
             }
             oShow();
         }
