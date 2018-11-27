@@ -41,7 +41,6 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "SlotTracks";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Slot Tracks";
             this.ResumeLayout(false);
 
         }

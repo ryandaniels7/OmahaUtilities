@@ -1,5 +1,6 @@
 ﻿using Code7248.word_reader;
 using System;
+using System.Drawing;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -41,6 +42,7 @@ namespace MicrolokTools
         public string oNewFile;
         public string DocText;
         public string oCurrent;
+        public List<string> oGZs = new List<string>();
         public List<string> oSlotOffs;
         public List<string> oSlotLabels;
         public List<string> oFilter;
@@ -64,11 +66,12 @@ namespace MicrolokTools
             oInput = oInput.Select(x => x.Trim()).ToList();
             oInput.RemoveAll(x => x == "");
             oInput = oInput.Select(x => Regex.Replace(x, @"^H", "")).ToList();
-            NVWrite(oProgram[0].Replace("ML", "NVML").Replace("MLK8", "MLK").Replace("ML8", "ML").Replace("MICROLOK", "GENISYS"),false);
+            oOutput[oOutput.LastIndexOf("SPARE,")] = "BKUP,";
+            NVWrite(oProgram[0].Replace("ML", "NVML").Replace("MLK8", "MLK").Replace("ML8", "ML").Replace("MICROLOK", "GENISYS"), false);
             NVBlank();
-            NVWrite("INTERFACE",false);
+            NVWrite("INTERFACE", false);
             NVBlank();
-            NVWrite("COMM",false);
+            NVWrite("COMM", false);
             NVBlank();
             NVWrite("LINK: GENISYS_LINE", false);
             NVWrite("ADJUSTABLE ENABLE: 0", false);
@@ -106,6 +109,10 @@ namespace MicrolokTools
                 if (oLine.Contains("SPARE"))
                 {
                     NVWrite(oLine);
+                }
+                else if (oLine.Contains("DLVY"))
+                {
+                    NVWrite(oLine.Replace("DLVY", "SPARE"));
                 }
                 else
                 {
@@ -152,6 +159,10 @@ namespace MicrolokTools
                 {
                     NVWrite(oLine);
                 }
+                else if (oLine.Contains("DLVY"))
+                {
+                    NVWrite(oLine.Replace("DLVY", "SPARE"));
+                }
                 else
                 {
                     NVWrite("HS" + oLine);
@@ -197,6 +208,10 @@ namespace MicrolokTools
                 {
                     NVWrite(oLine);
                 }
+                else if (oLine.Contains("DLVY"))
+                {
+                    NVWrite(oLine.Replace("DLVY", "SPARE"));
+                }
                 else
                 {
                     NVWrite("HAT" + oLine);
@@ -240,6 +255,10 @@ namespace MicrolokTools
                 {
                     NVWrite(oLine);
                 }
+                else if (oLine.Contains("DLVY"))
+                {
+                    NVWrite(oLine.Replace("DLVY", "SPARE"));
+                }
                 else
                 {
                     NVWrite("HU" + oLine);
@@ -268,6 +287,10 @@ namespace MicrolokTools
                 if (oLine.Contains("SPARE"))
                 {
                     NVWrite(oLine);
+                }
+                else if (oLine.Contains("BKUP"))
+                {
+                    NVWrite(oLine.Replace("BKUP", "SPARE"));
                 }
                 else
                 {
@@ -308,7 +331,7 @@ namespace MicrolokTools
             NVBlank();
             NVWrite("NV.ASSIGN DLVY TO LDLVY;");
             NVBlank();
-            foreach (string oLine in oInput.Where(x => x.Contains("NWZ")|| x.Contains("RWZ")))
+            foreach (string oLine in oInput.Where(x => x.Contains("NWZ") || x.Contains("RWZ")))
             {
                 NVWrite(String.Format("NV.ASSIGN HG{0} + HS{0} + HAT{0} + HU{0} TO L{0};", oLine.Replace(";", "").Replace(",", "")));
             }
@@ -335,9 +358,12 @@ namespace MicrolokTools
                 {
                     oLabels[oLabelCount] = new Label();
                     SlotForm.Controls.Add(oLabels[oLabelCount]);
-                    oLabels[oLabelCount].AutoSize = true;
-                    oLabels[oLabelCount].Text = NoPunct(oLine);
-                    oLabels[oLabelCount].Location = new System.Drawing.Point(oHorizontal,oVertical);
+                    oLabels[oLabelCount].AutoSize = false;
+                    oLabels[oLabelCount].Height = 13;
+                    oLabels[oLabelCount].Width = (int)oWidth;
+                    oLabels[oLabelCount].Text = NoPunct(oLine) + ":";
+                    oLabels[oLabelCount].TextAlign = ContentAlignment.TopRight;
+                    oLabels[oLabelCount].Location = new System.Drawing.Point(oHorizontal, oVertical);
                     oLabels[oLabelCount].Name = "GZ" + (oLabelCount + 1);
                     oLabelCount++;
                     oLabels[oLabelCount] = new Label();
@@ -348,18 +374,19 @@ namespace MicrolokTools
                     oHorizontal = oHorizontal + (int)oWidth;
                     oLabels[oLabelCount].Location = new System.Drawing.Point(oHorizontal, oVertical);
                     oLabels[oLabelCount].Name = "SLOT" + oLabelCount;
+                    oLabels[oLabelCount].BackColor = SystemColors.ControlLight;
+                    oLabels[oLabelCount].BorderStyle = BorderStyle.Fixed3D;
                     oLabels[oLabelCount].Click += (sender, EventArgs) => { Label_Click(sender, EventArgs); };
                     //button.Click += (sender, EventArgs) => { buttonNext_Click(sender, EventArgs, item.NextTabIndex); };
-
                     oHorizontal = oHorizontal + 40;
                     if (oHorizontal > 400)
                     {
                         oHorizontal = 10;
-                        oVertical = oVertical + 17;
+                        oVertical = oVertical + 20;
                     }
                     oLabelCount++;
                 }
-                oVertical = oVertical + 17;
+                oVertical = oVertical + 20;
                 Button oDone = new Button();
                 oDone.Click += new EventHandler(DoneButton_Click);
                 oDone.Name = "DoneButton";
@@ -369,6 +396,112 @@ namespace MicrolokTools
                 oDone.Location = new System.Drawing.Point(oHorizontal - (oDone.Width / 2), oVertical);
                 SlotForm.ShowDialog();
             }
+            for (int i = 0; i < oGZs.Count(); i = i + 2)
+            {
+                NVWrite(String.Format("NV.ASSIGN GENISYS_LINE.ENABLED * HG{0} * ~L{1} TO HG{0};", NoPunct(oGZs[i]), NoPunct(oGZs[i + 1])));
+                NVWrite(String.Format("NV.ASSIGN SCS128_LINE.ENABLED * HS{0} * ~L{1} TO HS{0};", NoPunct(oGZs[i]), NoPunct(oGZs[i + 1])));
+                NVWrite(String.Format("NV.ASSIGN ATCS_LINE.ENABLED * HAT{0} * ~L{1} TO HAT{0};", NoPunct(oGZs[i]), NoPunct(oGZs[i + 1])));
+                NVWrite(String.Format("NV.ASSIGN UCE_LINE.ENABLED * HU{0} * ~L{1} TO HU{0};", NoPunct(oGZs[i]), NoPunct(oGZs[i + 1])));
+                NVBlank();
+            }
+            for (int i = 0; i < oGZs.Count(); i = i + 2)
+            {
+                NVWrite(String.Format("NV.ASSIGN HG{0} + HS{0} + HAT{0} + HU{0} TO L{0};", NoPunct(oGZs[i])));
+            }
+            NVBlank();
+
+            if (ListIndex(oInput,"MCZ") > -1)
+            {
+                NVWrite(String.Format("NV.ASSIGN HG{0} + HS{0} + HAT{0} + HU{0} TO L{0};",NoPunct(oInput[ListIndex(oInput, "MCZ")])));
+            }
+            if (ListIndex(oInput, "TEST") > -1)
+            {
+                NVWrite(String.Format("NV.ASSIGN HG{0} + HS{0} + HAT{0} + HU{0} TO L{0};", NoPunct(oInput[ListIndex(oInput, "TEST")])));
+            }
+            NVBlank();
+            foreach (string oLine in oOutput.Where(x => x.Contains("NWK") || x.Contains("RWK")))
+            {
+                NVWrite(String.Format("NV.ASSIGN L{0} TO HG{0},HS{0},HAT{0},HU{0};", NoPunct(oLine)));
+            }
+            NVBlank();
+            foreach (string oLine in oOutput.Where(x => x.Contains("BLK")))
+            {
+                NVWrite(String.Format("NV.ASSIGN L{0} TO HG{0},HS{0},HAT{0},HU{0};", NoPunct(oLine)));
+            }
+            NVBlank();
+            foreach (string oLine in oOutput.Where(x => x.Contains("GK")))
+            {
+                NVWrite(String.Format("NV.ASSIGN L{0} TO HG{0},HS{0},HAT{0},HU{0};", NoPunct(oLine)));
+            }
+            NVBlank();
+            foreach (string oLine in oOutput.Where(x => x.Contains("TK") && !x.Contains("_") && !x.Contains("TEST")))
+            {
+                NVWrite(String.Format("NV.ASSIGN L{0} TO HG{0},HS{0},HAT{0},HU{0};", NoPunct(oLine)));
+            }
+            NVBlank();
+            foreach (string oLine in oOutput.Where(x => x.Contains("_TK")))
+            {
+                NVWrite(String.Format("NV.ASSIGN L{0} TO HG{0},HS{0},HAT{0},HU{0};", NoPunct(oLine)));
+            }
+            NVBlank();
+            foreach (string oLine in oOutput.Where(x => x.Contains("_AK")))
+            {
+                NVWrite(String.Format("NV.ASSIGN L{0} TO HG{0},HS{0},HAT{0},HU{0};", NoPunct(oLine)));
+            }
+            NVBlank();
+            if (ListIndex(oOutput, "FIBER") > -1)
+            {
+                NVWrite(String.Format("NV.ASSIGN L{0} TO HG{0},HS{0},HAT{0},HU{0};", NoPunct(oOutput[ListIndex(oOutput, "FIBER")])));
+            }
+            NVBlank();
+            foreach (string oLine in oOutput.Where(x => x.Contains("LOPK")))
+            {
+                NVWrite(String.Format("NV.ASSIGN L{0} TO HG{0},HS{0},HAT{0},HU{0};", NoPunct(oLine)));
+            }
+            foreach (string oLine in oOutput.Where(x => x.Contains("LOK")))
+            {
+                NVWrite(String.Format("NV.ASSIGN L{0} TO HG{0},HS{0},HAT{0},HU{0};", NoPunct(oLine)));
+            }
+            if (ListIndex(oOutput, "HEALTH") > -1)
+            {
+                NVWrite(String.Format("NV.ASSIGN L{0} to HG{0},HS{0},HAT{0},HU{0};", NoPunct(oOutput[ListIndex(oOutput, "HEALTH")])));
+            }
+            if (ListIndex(oOutput, "K1IK") > -1)
+            {
+                NVWrite(String.Format("NV.ASSIGN L{0} to HG{0},HS{0},HAT{0},HU{0};", NoPunct(oOutput[ListIndex(oOutput, "K1IK")])));
+            }
+            if (ListIndex(oOutput, "SWIK") > -1)
+            {
+                NVWrite(String.Format("NV.ASSIGN L{0} to HG{0},HS{0},HAT{0},HU{0};", NoPunct(oOutput[ListIndex(oOutput, "SWIK")])));
+            }
+            if (ListIndex(oOutput, "POK") > -1)
+            {
+                NVWrite(String.Format("NV.ASSIGN L{0} to HG{0},HS{0},HAT{0},HU{0};", NoPunct(oOutput[ListIndex(oOutput, "POK")])));
+            }
+            if (ListIndex(oOutput, "TESTK") > -1)
+            {
+                NVWrite(String.Format("NV.ASSIGN L{0} to HG{0},HS{0},HAT{0},HU{0};", NoPunct(oOutput[ListIndex(oOutput, "TESTK")])));
+            }
+            NVBlank();
+            NVWrite("NV.ASSIGN GENISYS_LINE.STANDBY + SCS128_LINE.STANDBY + ATCS_LINE.STANDBY + UCE_LINE.STANDBY TO LED.8;");
+            NVBlank();
+            NVWrite("NV.ASSIGN GENISYS_LINE.STANDBY + SCS128_LINE.STANDBY + ATCS_LINE.STANDBY + UCE_LINE.STANDBY TO HGBKUP, HSBKUP, HATBKUP, HUBKUP;");
+            NVBlank();
+            NVWrite("END LOGIC",false);
+            NVBlank();
+            NVWrite("NUMERIC BEGIN", false);
+            NVBlank();
+            NVWrite("BLOCK 1 TRIGGERS ON", false);
+            NVWrite("ATCS_LINE.XOVR.INPUTS.RECEIVED,GENISYS_LINE.0.INPUTS.RECEIVED,SCS128_LINE.0.INPUTS.RECEIVED,UCE_LINE.0.INPUTS.RECEIVED AND STALE AFTER 0:SEC;");
+            NVBlank();
+            NVWrite("NV.ASSIGN ~DLVY TO DLVY;");
+            NVWrite("NV.ASSIGN ~DLVY TO DLVY;");
+            NVBlank();
+            NVWrite("END BLOCK", false);
+            NVBlank();
+            NVWrite("END NUMERIC", false);
+            NVBlank();
+            NVWrite("END PROGRAM",false);
             oNewFile = oNVProgram[0].Replace("GENISYS_II PROGRAM ", "").Replace(";", "");
             oCompleted = string.Join(Environment.NewLine, oNVProgram.ToArray());
         }
@@ -397,6 +530,10 @@ namespace MicrolokTools
             TrackForm.TopMost = true;
             TrackForm.ShowDialog();
         }
+        public int ListIndex(List<string> sList, string sString)
+        {
+            return (sList.FindIndex(x => x.Contains(sString)));
+        }
         public void Chose_Track(object sender, EventArgs e)
         {
             oCurrentLabel.Text = OSBox.Text;
@@ -404,11 +541,18 @@ namespace MicrolokTools
         }
         public void DoneButton_Click(object sender, EventArgs e)
         {
+            foreach (Control x in SlotForm.Controls)
+            {
+                if (x is Label)
+                {
+                    oGZs.Add(x.Text);
+                }
+            }
             SlotForm.Dispose();
         }
         public string NoPunct(string sString)
         {
-            return sString.Replace(",", "").Replace(";", "");
+            return sString.Replace(",", "").Replace(";", "").Replace(":","");
         }
         public void NVBlank()
         {
@@ -435,7 +579,7 @@ namespace MicrolokTools
             oDoc.Content.Font.Name = "courier new";
             oDoc.SaveAs2(oSourceFolder + @"\" + oNewFile + ".docx");
             oWord.Visible = true;
-            //oWord.Run("Exterior.ExteriorRun");
+            oWord.Run("Exterior.ExteriorRunNV");
             oDoc = null;
             oWord = null;
         }
@@ -684,7 +828,7 @@ namespace MicrolokTools
             {
                 DocToPlain();
                 NonVitalBuilder();
-                //WriteNonVital();
+                WriteNonVital();
             }
             oShow();
         }
