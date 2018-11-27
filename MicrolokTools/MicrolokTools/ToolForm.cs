@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Microsoft.Office.Interop.Word;
-using Application = System.Windows.Forms.Application;
 
 namespace MicrolokTools
 {
@@ -20,13 +19,20 @@ namespace MicrolokTools
         public string[] stringSeparators;
         public Range oRange;
         public Regex oRegex;
+        public double oWidth;
         public string oCompleted;
         public string oNote;
         public Match oMatch;
         public Label[] oLabels;
+        public Label oCurrentLabel;
+        public Label oGZLabel;
+        public ComboBox OSBox;
         public int oLabelCount;
         public int oStart;
         public int oEnd;
+        public Form SlotForm;
+        public Form SlotTracks;
+        public Form TrackForm;
         public int oVertical;
         public int oHorizontal;
         public System.Drawing.Point StartPoint;
@@ -35,10 +41,11 @@ namespace MicrolokTools
         public string oNewFile;
         public string DocText;
         public string oCurrent;
+        public List<string> oSlotOffs;
+        public List<string> oSlotLabels;
         public List<string> oFilter;
         public List<string> oProgram;
         public List<string> oNVProgram = new List<string>();
-        public List<string> oSection;
         public List<string> oInput;
         public List<string> oOutput;
 
@@ -312,43 +319,96 @@ namespace MicrolokTools
             }
             NVBlank();
 
-            using (Form form = new SlotOffSelect())
+            using (SlotForm = new SlotOffSelect())
             {
-                form.TopLevel = true;
-                form.TopMost = true;
+                SlotForm.TopLevel = true;
+                SlotForm.TopMost = true;
+                oWidth = (oInput.OrderByDescending(x => x.Length).First().Length * 6.5);
                 oVertical = 13;
-                oHorizontal = 13;
-                oLabelCount = (from string word in oInput where word.Contains("GZ") select word).Count();
+                oHorizontal = 10;
+                oLabelCount = (from string word in oInput where word.Contains("GZ") select word).Count() * 2;
+                oSlotOffs = oOutput.Where(x => x.Contains("TK") && !x.Contains("_") && !x.Contains("TEST")).ToList();
+                oSlotOffs = oSlotOffs.Select(x => NoPunct(x)).ToList();
                 oLabels = new Label[oLabelCount];
                 oLabelCount = 0;
                 foreach (string oLine in oInput.Where(x => x.Contains("GZ")))
                 {
                     oLabels[oLabelCount] = new Label();
-                    form.Controls.Add(oLabels[oLabelCount]);
+                    SlotForm.Controls.Add(oLabels[oLabelCount]);
                     oLabels[oLabelCount].AutoSize = true;
-                    oLabels[oLabelCount].Text = oLine;
+                    oLabels[oLabelCount].Text = NoPunct(oLine);
                     oLabels[oLabelCount].Location = new System.Drawing.Point(oHorizontal,oVertical);
-                    
-                    oHorizontal = oHorizontal + oLabels[oLabelCount].Width + 13;
+                    oLabels[oLabelCount].Name = "GZ" + (oLabelCount + 1);
+                    oLabelCount++;
+                    oLabels[oLabelCount] = new Label();
+                    SlotForm.Controls.Add(oLabels[oLabelCount]);
+                    oLabels[oLabelCount].AutoSize = true;
+                    oCurrent = oSlotOffs.FirstOrDefault(s => s.StartsWith(oLine.Substring(0, 1)));
+                    oLabels[oLabelCount].Text = NoPunct(oCurrent);
+                    oHorizontal = oHorizontal + (int)oWidth;
+                    oLabels[oLabelCount].Location = new System.Drawing.Point(oHorizontal, oVertical);
+                    oLabels[oLabelCount].Name = "SLOT" + oLabelCount;
+                    oLabels[oLabelCount].Click += (sender, EventArgs) => { Label_Click(sender, EventArgs); };
+                    //button.Click += (sender, EventArgs) => { buttonNext_Click(sender, EventArgs, item.NextTabIndex); };
+
+                    oHorizontal = oHorizontal + 40;
+                    if (oHorizontal > 400)
+                    {
+                        oHorizontal = 10;
+                        oVertical = oVertical + 17;
+                    }
                     oLabelCount++;
                 }
-                form.ShowDialog();
+                oVertical = oVertical + 17;
+                Button oDone = new Button();
+                oDone.Click += new EventHandler(DoneButton_Click);
+                oDone.Name = "DoneButton";
+                SlotForm.Controls.Add(oDone);
+                oDone.Text = "Done";
+                oHorizontal = SlotForm.Width / 2;
+                oDone.Location = new System.Drawing.Point(oHorizontal - (oDone.Width / 2), oVertical);
+                SlotForm.ShowDialog();
             }
-                
-
-
-
-
-
-
-
-
-
-
-
-
             oNewFile = oNVProgram[0].Replace("GENISYS_II PROGRAM ", "").Replace(";", "");
             oCompleted = string.Join(Environment.NewLine, oNVProgram.ToArray());
+        }
+        public void Label_Click(object sender, EventArgs e)
+        {
+            oCurrentLabel = sender as Label;
+            var control = SlotForm.Controls.OfType<Label>().FirstOrDefault(c => c.Name == oCurrentLabel.Name.Replace("SLOT", "GZ"));
+            TrackForm = new SlotTracks();
+            OSBox = new ComboBox();
+            oGZLabel = new Label();
+            oGZLabel.AutoSize = true;
+            TrackForm.Controls.Add(oGZLabel);
+            TrackForm.Controls.Add(OSBox);
+            oVertical = 13;
+            oHorizontal = 10;
+            oGZLabel.Text = control.Text;
+            oGZLabel.Location = new System.Drawing.Point(oHorizontal, oVertical);
+            oVertical = 10;
+            oHorizontal = (int)(oHorizontal + oGZLabel.Text.Length * 10);
+            OSBox.Location = new System.Drawing.Point(oHorizontal, oVertical);
+            OSBox.Width = 60;
+            OSBox.DataSource = oSlotOffs;
+            OSBox.Text = oCurrentLabel.Text;
+            OSBox.SelectedIndexChanged += (osender, EventArgs) => { Chose_Track(osender, EventArgs); };
+            TrackForm.TopLevel = true;
+            TrackForm.TopMost = true;
+            TrackForm.ShowDialog();
+        }
+        public void Chose_Track(object sender, EventArgs e)
+        {
+            oCurrentLabel.Text = OSBox.Text;
+            TrackForm.Dispose();
+        }
+        public void DoneButton_Click(object sender, EventArgs e)
+        {
+            SlotForm.Dispose();
+        }
+        public string NoPunct(string sString)
+        {
+            return sString.Replace(",", "").Replace(";", "");
         }
         public void NVBlank()
         {
@@ -594,7 +654,7 @@ namespace MicrolokTools
             this.TopLevel = true;
             this.TopMost = true;
         }
-        private void ToolForm_Load(object sender, EventArgs e)
+        public void ToolForm_Load(object sender, EventArgs e)
         {
 
         }
@@ -624,7 +684,7 @@ namespace MicrolokTools
             {
                 DocToPlain();
                 NonVitalBuilder();
-                WriteNonVital();
+                //WriteNonVital();
             }
             oShow();
         }

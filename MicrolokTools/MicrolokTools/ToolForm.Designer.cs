@@ -48,6 +48,7 @@
             // 
             // ExtensionButton
             // 
+            this.ExtensionButton.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.ExtensionButton.Location = new System.Drawing.Point(121, 54);
             this.ExtensionButton.Name = "ExtensionButton";
             this.ExtensionButton.Size = new System.Drawing.Size(83, 37);
@@ -90,6 +91,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.ClientSize = new System.Drawing.Size(237, 144);
             this.Controls.Add(this.MLLConvertButton);
             this.Controls.Add(this.LogBitsButton);

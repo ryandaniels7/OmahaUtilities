@@ -60,6 +60,12 @@
     <Compile Include="SlotOffSelect.Designer.cs">
       <DependentUpon>SlotOffSelect.cs</DependentUpon>
     </Compile>
+    <Compile Include="SlotTracks.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SlotTracks.Designer.cs">
+      <DependentUpon>SlotTracks.cs</DependentUpon>
+    </Compile>
     <Compile Include="ToolForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -70,6 +76,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="SlotOffSelect.resx">
       <DependentUpon>SlotOffSelect.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SlotTracks.resx">
+      <DependentUpon>SlotTracks.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ToolForm.resx">
       <DependentUpon>ToolForm.cs</DependentUpon>
